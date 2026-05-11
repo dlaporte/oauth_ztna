@@ -44,7 +44,7 @@ ROUTES['home'] = function (view) {
         <a class="btn btn--ghost" href="#/oauth-vs-oidc">What's the difference between OAuth and OIDC?</a>
       </div>
       <div class="stat-row">
-        <div class="stat"><div class="stat__num">14</div><div class="stat__label">modules</div></div>
+        <div class="stat"><div class="stat__num">15</div><div class="stat__label">modules</div></div>
         <div class="stat"><div class="stat__num">03</div><div class="stat__label">ztna gateways</div></div>
         <div class="stat"><div class="stat__num">06</div><div class="stat__label">animated flows</div></div>
         <div class="stat"><div class="stat__num">16</div><div class="stat__label">debug labs</div></div>
@@ -79,7 +79,7 @@ ROUTES['home'] = function (view) {
     <section class="section">
       <div class="kicker">four ways in</div>
       <h2 style="margin-top:8px">Pick a track. Switch any time.</h2>
-      <p class="lede" style="margin-top:10px">There's a sidebar with all fourteen modules — but if you don't know where to start, here are the on-ramps that make sense for the most common audiences.</p>
+      <p class="lede" style="margin-top:10px">There's a sidebar with all fifteen modules — but if you don't know where to start, here are the on-ramps that make sense for the most common audiences.</p>
       <div class="grid grid--auto-260" style="margin-top:22px">
         <div class="card card--accent">
           <div class="minihead">i'm new to oauth/oidc</div>
