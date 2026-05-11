@@ -16,11 +16,33 @@ function moduleHeader(num, eyebrow, title, lede) {
 }
 
 ROUTES['cloudflare'] = function (view) {
-  setHTML(view, moduleHeader('07', 'platforms · 01', 'Cloudflare Access — the ZTNA gateway.', `
+  setHTML(view, moduleHeader('07', 'gateways · 01', 'Cloudflare Access — Cloudflare\'s ZTNA gateway.', `
     Cloudflare Access is an identity-aware reverse proxy living at Cloudflare's edge. It implements Zero Trust Network Access (ZTNA):
     every request is authenticated and authorized before it reaches the origin. Access demands authentication, evaluates
     per-application policies, and forwards a signed assertion to your origin. It is not your Identity Provider (IdP) — that's still Okta.
   `) + `
+
+    <section class="section">
+      <div class="kicker">the category</div>
+      <h2 style="margin-top:8px">Identity-Aware Proxy — a pattern, not just one product.</h2>
+      <p class="lede" style="margin-top:10px">Cloudflare Access is one of several products that implement the same pattern: a reverse proxy that authenticates users via OIDC/SAML before forwarding to a backend. The generic name is <em>Identity-Aware Proxy (IAP)</em> — popularised by Google but used as a category term. You'll also see <em>ZTNA Application Gateway</em>, <em>Authenticating Reverse Proxy</em>, or simply "Access" / "Authentication" depending on the vendor.</p>
+      <table class="ctable" style="margin-top:18px">
+        <thead><tr><th>Vendor product</th><th>Lives where</th><th>Identity provider it talks to</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Cloudflare Access</strong> <span class="muted">(this module)</span></td><td>Cloudflare edge</td><td>Any OIDC/SAML IdP (Okta, Azure AD, Google, …)</td></tr>
+          <tr><td><strong>AWS ALB authentication</strong> <span class="muted">→ <a class="linklike" href="#/aws-alb">module</a></span></td><td>AWS Application Load Balancer</td><td>Cognito (native) or any OIDC IdP</td></tr>
+          <tr><td><strong>FortiGate ZTNA Application Gateway</strong> <span class="muted">→ <a class="linklike" href="#/fortigate">module</a></span></td><td>FortiGate appliance / FortiOS</td><td>SAML / OIDC to external IdP, or FortiAuthenticator</td></tr>
+          <tr><td>Google IAP</td><td>Google Cloud Load Balancer</td><td>Google accounts / Identity Platform</td></tr>
+          <tr><td>Azure Entra Private Access / App Proxy</td><td>Microsoft cloud</td><td>Entra ID (formerly Azure AD)</td></tr>
+          <tr><td>oauth2-proxy / Vouch / Pomerium</td><td>self-hosted in front of your apps</td><td>Any OIDC IdP</td></tr>
+        </tbody>
+      </table>
+      <div class="note" style="margin-top:14px">
+        <div class="note__head">why this matters</div>
+        <div>Once you understand <em>one</em> of these gateways, you understand all of them — the differences are mostly which IdPs they integrate cleanly with, where they run, and what extras they add (device posture, service tokens, tunnel-back). The OIDC mechanics underneath are identical.</div>
+      </div>
+    </section>
+
     <section class="section">
       <div class="grid grid--2">
         <div class="card">
@@ -167,8 +189,301 @@ ROUTES['cloudflare'] = function (view) {
   $('#cf-s', view).textContent = s;
 };
 
+/* ============================================================
+   AWS ALB + Cognito
+   ============================================================ */
+ROUTES['aws-alb'] = function (view) {
+  setHTML(view, moduleHeader('08', 'gateways · 02', 'AWS ALB + Cognito — AWS\'s identity-aware proxy.', `
+    AWS Application Load Balancer (ALB) has authentication actions built into its listener rules. When a request hits a protected path,
+    the ALB itself runs the OIDC dance with an Identity Provider — most natively with Amazon Cognito, but optionally with any standards-compliant
+    OIDC IdP including Okta. After the user signs in, the ALB attaches signed identity headers to the request and forwards it to your target.
+  `) + `
+
+    <section class="section">
+      <div class="grid grid--2">
+        <div class="card">
+          <div class="minihead">what alb authentication does</div>
+          <h3>Two listener-rule actions</h3>
+          <ul class="split__list" style="margin-top:10px">
+            <li><code>authenticate-cognito</code> — uses an Amazon Cognito user pool. No external IdP setup needed.</li>
+            <li><code>authenticate-oidc</code> — uses any OIDC provider you configure with endpoints &amp; client credentials.</li>
+            <li>The action is attached to a listener rule. Each rule can protect a different path/host with different IdP settings.</li>
+            <li>ALB performs the OIDC code exchange server-side; tokens never reach the browser as URL parameters.</li>
+            <li>Session is tracked with the <code>AWSELBAuthSessionCookie-N</code> cookie, signed by AWS.</li>
+          </ul>
+        </div>
+        <div class="card card--cyan">
+          <div class="minihead">cognito vs external oidc</div>
+          <h3>Pick by who owns the directory</h3>
+          <ul class="split__list" style="margin-top:10px">
+            <li><strong>Cognito user pool</strong>: AWS hosts the user directory. Add social/SAML federation on top if you like. Best for B2C / consumer apps native to AWS.</li>
+            <li><strong>External OIDC (Okta, Azure AD, Google):</strong> existing enterprise directory; ALB redirects to that IdP directly. Best when your users already live elsewhere.</li>
+            <li>You can also stack them: external SAML IdP → Cognito user pool (as a federation broker) → ALB.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="kicker">listener rule shape</div>
+      <h2 style="margin-top:8px">A protected target group.</h2>
+      <p class="lede" style="margin-top:10px">In ALB terminology, a "listener rule" matches an incoming request (by host, path, headers) and runs one or more "actions". Auth actions run first; if the user isn't signed in, ALB redirects to the IdP. Once auth completes, control passes to the forward action that hits your target group.</p>
+
+      <div class="card" style="margin-top:18px">
+        <div class="minihead">authenticate-oidc example</div>
+        <pre style="white-space:pre-wrap;background:var(--bg);border:1px solid var(--hairline);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12.5px;line-height:1.6;color:var(--ink-2);margin-top:10px"><span class="text-amber">Conditions:</span>
+  - Host: app.example.com
+  - Path: /*
+
+<span class="text-amber">Actions:</span>
+  - Type: <span class="text-cyan">authenticate-oidc</span>
+    Issuer:                 https://okta.example.com/oauth2/default
+    AuthorizationEndpoint:  https://okta.example.com/oauth2/default/v1/authorize
+    TokenEndpoint:          https://okta.example.com/oauth2/default/v1/token
+    UserInfoEndpoint:       https://okta.example.com/oauth2/default/v1/userinfo
+    ClientId:               0oa9_alb_demo
+    ClientSecret:           <span class="text-coral">&lt;from AWS Secrets Manager&gt;</span>
+    Scope:                  "openid profile email groups"
+    SessionCookieName:      AWSELBAuthSessionCookie
+    SessionTimeout:         28800           <span class="text-muted"># 8 hours</span>
+    OnUnauthenticatedRequest: authenticate  <span class="text-muted"># vs allow / deny</span>
+
+  - Type: <span class="text-lime">forward</span>
+    TargetGroupArn: arn:aws:elasticloadbalancing:us-east-1:…:targetgroup/demo-app</pre>
+      </div>
+      <div class="risk" style="margin-top:18px">
+        <div class="risk__head">redirect URI</div>
+        <p>The Okta application's Sign-in redirect URI must be <code>https://&lt;ALB-DNS-name&gt;/oauth2/idpresponse</code> (literal path; ALB owns that endpoint). Same exact-match rules as elsewhere — the most common ALB-auth bug.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="kicker">at the target</div>
+      <h2 style="margin-top:8px">What headers does ALB send to your backend?</h2>
+
+      ${packetCardSafe({
+        method: 'GET',
+        url: 'http://10.0.1.42:8080/  (target group instance)',
+        channel: 'back',
+        body: [
+          'Host: app.example.com',
+          '<key>x-amzn-oidc-data</key>: <secret>eyJ… signed JWT with the user\'s claims</secret>',
+          '<key>x-amzn-oidc-accesstoken</key>: <secret>eyJ… raw access_token from the IdP</secret>',
+          '<key>x-amzn-oidc-identity</key>: <public>00u9abc123XYZuser</public>   <comment># the OIDC sub claim</comment>',
+          'X-Forwarded-For: 198.51.100.42',
+          'X-Forwarded-Proto: https',
+          'X-Amzn-Trace-Id: Root=1-…',
+          '',
+          '<comment># Your application validates x-amzn-oidc-data and trusts the claims it carries.</comment>'
+        ].join('\n')
+      }, { note: 'Trust <code>x-amzn-oidc-data</code> only after verifying its signature. The other headers are convenience copies; the JWT is the source of truth.' })}
+    </section>
+
+    <section class="section">
+      <div class="kicker">x-amzn-oidc-data jwt</div>
+      <h2 style="margin-top:8px">A second JWT, signed by AWS — verify it like any other.</h2>
+      <p class="lede" style="margin-top:10px">ALB issues its own JWT with the user's claims (similar to how Cloudflare Access issues CF_Authorization). It's signed by an AWS-managed key, region-specific, and rotated regularly. Public keys live at a predictable URL.</p>
+      <div class="card" style="margin-top:18px">
+        <div class="minihead">verify the x-amzn-oidc-data jwt</div>
+        <pre style="white-space:pre-wrap;background:var(--bg);border:1px solid var(--hairline);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12.5px;line-height:1.6;color:var(--ink-2);margin-top:10px"><span class="text-muted"># 1. Parse the JWT header to get the kid (key id)</span>
+header = base64url_decode(token.split('.')[0])
+kid    = header['kid']
+region = header['signer'].split('.')[2]   <span class="text-muted"># e.g. "us-east-1"</span>
+
+<span class="text-muted"># 2. Fetch the public key from the AWS regional endpoint</span>
+GET https://public-keys.auth.elb.<span class="text-amber">{region}</span>.amazonaws.com/<span class="text-amber">{kid}</span>
+  → -----BEGIN PUBLIC KEY----- … (PEM, ES256)
+
+<span class="text-muted"># 3. Verify the signature (ES256), then validate claims:</span>
+exp     in the future                  ✓
+iss     matches your IdP issuer        ✓
+client  matches the registered client  ✓
+signer  matches the ALB's ARN          ✓
+
+<span class="text-muted"># 4. Read the user claims you trust</span>
+sub     = payload['sub']
+email   = payload['email']
+groups  = payload['custom:groups']</pre>
+      </div>
+      <div class="note" style="margin-top:14px">
+        <div class="note__head">two layers of verification</div>
+        <div>Some teams skip backend verification because "ALB already authenticated". That's network-trust-equivalent reasoning. Anything that bypasses the ALB (test runners, direct ENI access, security groups misconfigured) reaches your target without a valid <code>x-amzn-oidc-data</code> header. Always verify.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="kicker">cloudflare access vs aws alb</div>
+      <h2 style="margin-top:8px">How they compare.</h2>
+      <table class="ctable" style="margin-top:18px">
+        <thead><tr><th>Aspect</th><th>Cloudflare Access</th><th>AWS ALB + Cognito</th></tr></thead>
+        <tbody>
+          <tr><td>Where it runs</td><td>Cloudflare global edge</td><td>Your AWS region(s)</td></tr>
+          <tr><td>IdP integration</td><td>Built-in Okta, Azure AD, Google, SAML, OIDC</td><td>Cognito or any single OIDC provider per listener rule</td></tr>
+          <tr><td>Signed header to origin</td><td><code>Cf-Access-Jwt-Assertion</code></td><td><code>x-amzn-oidc-data</code></td></tr>
+          <tr><td>Public keys at</td><td><code>team.cloudflareaccess.com/cdn-cgi/access/certs</code></td><td><code>public-keys.auth.elb.{region}.amazonaws.com/{kid}</code></td></tr>
+          <tr><td>Non-human auth</td><td>Service tokens (CF-issued)</td><td>None native — bypass with API key validation in backend</td></tr>
+          <tr><td>Tunnel to private backends</td><td>Cloudflare Tunnel</td><td>VPC + private subnets (already there)</td></tr>
+          <tr><td>Pricing</td><td>Free up to 50 users; per-seat above</td><td>ALB hourly + LCU; Cognito MAU pricing</td></tr>
+          <tr><td>Best for</td><td>Multi-cloud / on-prem apps, Cloudflare DNS shops</td><td>Apps already behind an ALB, AWS-native shops</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin-top:14px"><a class="linklike" href="#/fortigate">Compare with FortiGate ZTNA →</a> for the on-prem / enterprise-appliance approach with device posture.</p>
+    </section>
+  `);
+};
+
+/* ============================================================
+   FortiGate ZTNA
+   ============================================================ */
+ROUTES['fortigate'] = function (view) {
+  setHTML(view, moduleHeader('09', 'gateways · 03', 'FortiGate ZTNA — the enterprise-appliance gateway.', `
+    Fortinet's ZTNA Application Gateway turns a FortiGate firewall into an identity-aware reverse proxy. It pairs with
+    FortiClient (on the endpoint) and FortiClient EMS (for posture &amp; tag evaluation) to gate access based not just on <em>who</em>
+    the user is, but on the <em>state of the device</em> they're connecting from.
+  `) + `
+
+    <section class="section">
+      <div class="grid grid--2">
+        <div class="card">
+          <div class="minihead">what fortigate ztna does</div>
+          <h3>Reverse proxy + posture</h3>
+          <ul class="split__list" style="margin-top:10px">
+            <li>Terminates user traffic at the FortiGate (on-prem appliance or virtual machine).</li>
+            <li>Authenticates the user via SAML or OIDC to an external IdP (Okta, Azure AD, FortiAuthenticator).</li>
+            <li>Reads <em>ZTNA tags</em> from FortiClient EMS — OS version, AV running, disk encryption, certificate presence, etc.</li>
+            <li>Evaluates ZTNA rules combining user identity + device tags.</li>
+            <li>Proxies to internal servers (HTTP, TCP, RDP, SSH).</li>
+          </ul>
+        </div>
+        <div class="card card--cyan">
+          <div class="minihead">ztna vs ssl vpn</div>
+          <h3>The intended replacement for VPN</h3>
+          <ul class="split__list" style="margin-top:10px">
+            <li><strong>SSL VPN:</strong> full-tunnel; user becomes a network insider. Trust is binary: in or out.</li>
+            <li><strong>FortiGate ZTNA:</strong> per-application access; the user never gets a network route. Each app evaluated independently.</li>
+            <li><strong>Device posture</strong> is the differentiator: SSL VPN authenticates the user; ZTNA authenticates the user <em>and the device</em>.</li>
+            <li>SSL VPN denies are TCP-level. ZTNA denies are application-level with a policy reason.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="kicker">the components</div>
+      <h2 style="margin-top:8px">Four pieces working together.</h2>
+      <div class="grid grid--auto-260" style="margin-top:22px">
+        <div class="card">
+          <div class="minihead">1 · forticlient</div>
+          <h3 style="margin-top:6px">On the endpoint</h3>
+          <p class="muted" style="margin-top:6px">Agent running on the user's laptop. Holds a device certificate, reports posture to EMS, and presents a client cert when the user connects to the ZTNA gateway.</p>
+        </div>
+        <div class="card">
+          <div class="minihead">2 · forticlient ems</div>
+          <h3 style="margin-top:6px">Management &amp; posture</h3>
+          <p class="muted" style="margin-top:6px">Central server that issues device certificates, evaluates posture rules, and emits <em>ZTNA tags</em> back to the FortiGate.</p>
+        </div>
+        <div class="card">
+          <div class="minihead">3 · fortigate</div>
+          <h3 style="margin-top:6px">The gateway itself</h3>
+          <p class="muted" style="margin-top:6px">Runs the ZTNA Application Gateway service. Receives requests, validates client certs, evaluates rules, and proxies to internal servers.</p>
+        </div>
+        <div class="card">
+          <div class="minihead">4 · external idp</div>
+          <h3 style="margin-top:6px">User authentication</h3>
+          <p class="muted" style="margin-top:6px">Okta, Azure AD, or FortiAuthenticator. The FortiGate redirects users here via SAML or OIDC; identity is returned and combined with device posture for the access decision.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="kicker">ztna rule</div>
+      <h2 style="margin-top:8px">User identity AND device posture.</h2>
+      <p class="lede" style="margin-top:10px">A ZTNA rule on the FortiGate names a user group, a set of required ZTNA tags, and the protected server. Both conditions must hold for access to be granted — this is the "device + user" model that distinguishes ZTNA from classic VPN.</p>
+
+      <div class="card" style="margin-top:18px">
+        <div class="minihead">example ztna rule</div>
+        <pre style="white-space:pre-wrap;background:var(--bg);border:1px solid var(--hairline);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12.5px;line-height:1.6;color:var(--ink-2);margin-top:10px"><span class="text-amber">config firewall proxy-policy</span>
+  edit "Engineers → wiki"
+    <span class="text-amber">srcintf</span>  "ztna"
+    <span class="text-amber">dstintf</span>  "internal"
+    <span class="text-amber">action</span>   accept
+
+    <span class="text-amber">ztna-tags-match-logic</span>  and
+
+    <span class="text-amber">groups</span>            "Engineering"          <span class="text-muted"># from external IdP (Okta)</span>
+    <span class="text-amber">ztna-tags</span>         "AV-Running"           <span class="text-muted"># FortiClient reports AV is on</span>
+                       "Disk-Encrypted"       <span class="text-muted"># BitLocker / FileVault active</span>
+                       "Corp-Cert-Present"    <span class="text-muted"># device cert from EMS</span>
+
+    <span class="text-amber">ztna-server</span>       "wiki-internal"        <span class="text-muted"># FQDN: wiki.corp.example.com</span>
+    <span class="text-amber">authentication-method</span>  saml
+    <span class="text-amber">saml-server</span>       "Okta"                 <span class="text-muted"># SAML IdP profile</span>
+  next
+end</pre>
+      </div>
+      <div class="note" style="margin-top:18px">
+        <div class="note__head">ztna tags</div>
+        <div>Tags are computed by FortiClient EMS based on posture rules you author there: "tag <code>AV-Running</code> means the FortiEDR/FortiClient AV service is running and definitions are &lt;7 days old". The tag list travels to the FortiGate continuously. A rule that requires <code>AV-Running</code> blocks the device the moment EMS revokes the tag.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="kicker">request flow</div>
+      <h2 style="margin-top:8px">How a request gets through.</h2>
+      <ol style="font-size:14.5px;line-height:1.7;color:var(--ink-2);padding-left:20px;margin-top:14px">
+        <li>User opens <code>wiki.corp.example.com</code> on a managed laptop. DNS resolves to a FortiGate ZTNA Application Gateway VIP.</li>
+        <li>The FortiGate accepts the TLS connection and challenges the client for a device certificate (mTLS). FortiClient presents the cert issued by EMS.</li>
+        <li>FortiGate looks up the client certificate's subject → finds the matching device record → pulls its current ZTNA tags from EMS.</li>
+        <li>Tag check: does this device match the rule's <code>ztna-tags</code>? If not, deny with reason "device posture failed".</li>
+        <li>If the user isn't already authenticated, FortiGate redirects to the IdP (Okta) for SAML/OIDC sign-in.</li>
+        <li>IdP returns the user's identity + group membership. FortiGate combines this with the device tags and re-evaluates the rule.</li>
+        <li>If allowed, the FortiGate proxies the request to the internal server, attaching the authenticated user's identity in headers if configured.</li>
+      </ol>
+    </section>
+
+    <section class="section">
+      <div class="kicker">at the target</div>
+      <h2 style="margin-top:8px">What headers does FortiGate send to your backend?</h2>
+      ${packetCardSafe({
+        method: 'GET',
+        url: 'http://wiki.corp.internal/  (the protected backend)',
+        channel: 'back',
+        body: [
+          'Host: wiki.corp.example.com',
+          '<key>X-Authenticated-User</key>: <public>ada@example.com</public>',
+          '<key>X-Authenticated-Groups</key>: <public>Engineering</public>',
+          '<key>X-Forwarded-For</key>: 198.51.100.42',
+          '<key>X-FGT-ZTNA-Tags</key>: <public>AV-Running,Disk-Encrypted,Corp-Cert-Present</public>',
+          '',
+          '<comment># Header names depend on FortiGate config (HTTP header processing rules).</comment>',
+          '<comment># Unlike CF Access / ALB, FortiGate does NOT issue a separately-signed JWT by default.</comment>',
+          '<comment># If the backend needs cryptographic proof, configure mTLS between FortiGate and the backend.</comment>'
+        ].join('\n')
+      }, { note: 'Trust these headers ONLY if (a) the backend is unreachable except through the FortiGate (network isolation), or (b) you configure mTLS so the backend authenticates the FortiGate proxy.' })}
+    </section>
+
+    <section class="section">
+      <div class="kicker">cloudflare vs aws vs fortigate</div>
+      <h2 style="margin-top:8px">How they compare.</h2>
+      <table class="ctable" style="margin-top:18px">
+        <thead><tr><th>Aspect</th><th>Cloudflare Access</th><th>AWS ALB</th><th>FortiGate ZTNA</th></tr></thead>
+        <tbody>
+          <tr><td>Where it runs</td><td>Cloudflare edge</td><td>Your AWS region</td><td>On-prem / virtual appliance</td></tr>
+          <tr><td>Device posture</td><td>Limited (WARP client posture)</td><td>None natively</td><td><strong>First-class</strong> via FortiClient + EMS</td></tr>
+          <tr><td>Signed identity header</td><td><code>Cf-Access-Jwt-Assertion</code></td><td><code>x-amzn-oidc-data</code></td><td>Plain headers (no JWT by default)</td></tr>
+          <tr><td>Auth method to IdP</td><td>OIDC</td><td>OIDC</td><td>SAML or OIDC</td></tr>
+          <tr><td>Non-human auth</td><td>Service tokens</td><td>n/a</td><td>Certificate-based</td></tr>
+          <tr><td>Network model</td><td>Cloud → Tunnel → origin</td><td>VPC-internal target groups</td><td>On-prem proxy → internal LAN</td></tr>
+          <tr><td>Best for</td><td>SaaS apps, hybrid cloud</td><td>AWS-native, ALB-fronted services</td><td>Existing FortiGate shops, posture-critical orgs</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin-top:14px"><a class="linklike" href="#/cloudflare">Back to Cloudflare Access</a> · <a class="linklike" href="#/aws-alb">AWS ALB module</a></p>
+    </section>
+  `);
+};
+
 ROUTES['okta'] = function (view) {
-  setHTML(view, moduleHeader('08', 'platforms · 02', 'Okta — the identity provider.', `
+  setHTML(view, moduleHeader('10', 'identity · 01', 'Okta — the identity provider.', `
     Okta plays three roles in this lab: directory (users + groups), identity provider (login UI + Multi-Factor Authentication),
     and authorization server (issues tokens at standard OAuth and OpenID Connect endpoints).
   `) + `
@@ -269,7 +584,7 @@ ROUTES['okta'] = function (view) {
 };
 
 ROUTES['setup'] = function (view) {
-  setHTML(view, moduleHeader('09', 'platforms · 03', 'Setup wizard.', `
+  setHTML(view, moduleHeader('11', 'identity · 02', 'Setup wizard.', `
     The end-to-end recipe for a working ZTNA configuration: free Okta + free Cloudflare account, demo app, optional Tunnel.
   `) + `
     <section class="section">

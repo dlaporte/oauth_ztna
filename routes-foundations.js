@@ -18,11 +18,12 @@ function moduleHeader(num, eyebrow, title, lede) {
 }
 
 const ORDER = ['home','flow-lab','oauth-vs-oidc','tokens','three-layers','scopes-aud-claims',
-  'interactive-vs-headless','cloudflare','okta','setup','practice','glossary'];
+  'interactive-vs-headless','cloudflare','aws-alb','fortigate','okta','setup','practice','glossary'];
 const TITLES = {
   'home':'Overview','flow-lab':'Flow Lab','oauth-vs-oidc':'How OIDC Works',
   'tokens':'Tokens','three-layers':'The Three Layers','scopes-aud-claims':'Scopes · Audiences · Claims',
-  'interactive-vs-headless':'Interactive vs Headless','cloudflare':'Cloudflare Access','okta':'Okta',
+  'interactive-vs-headless':'Interactive vs Headless','cloudflare':'Cloudflare Access',
+  'aws-alb':'AWS ALB + Cognito','fortigate':'FortiGate ZTNA','okta':'Okta',
   'setup':'Setup Wizard','practice':'Practice','glossary':'Glossary'
 };
 

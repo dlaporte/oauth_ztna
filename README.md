@@ -27,7 +27,8 @@ The sidebar groups twelve modules into four tracks. You can read them in order, 
 |---|---|
 | **Start here** | First time? Open the **Overview** and click "See a flow happen". |
 | **Concepts** | Want to understand OIDC, tokens, scopes, and how the three system layers fit together. |
-| **Platforms** | Setting up the real thing? Open **Setup Wizard**. The Cloudflare Access and Okta modules are reference for what you'll configure. |
+| **ZTNA Gateways** | Compare Cloudflare Access, AWS ALB + Cognito, and FortiGate ZTNA — three implementations of the same Identity-Aware Proxy pattern. |
+| **Identity & build** | Setting up the real thing? Open **Setup Wizard**. The **Okta** module is reference for the IdP side. |
 | **Apply** | Debugging an issue, drilling on attacks, or trying to pick the right OAuth flow. |
 
 ### Module list
@@ -41,11 +42,13 @@ The sidebar groups twelve modules into four tracks. You can read them in order, 
 | 04 | **The Three Layers** | How Okta, Cloudflare Access, and your app map onto the OIDC principals. Architecture diagram, what each party knows, trust boundaries. |
 | 05 | **Scopes · Audiences · Claims** | Three different things that look alike in token payloads. What each one is for, how Access policies use them. |
 | 06 | **Interactive vs Headless** | Decision matrix: Device Authorization Grant (CLIs) vs Client Credentials + `private_key_jwt` (machine-to-machine) vs Cloudflare service tokens (gateway-only). |
-| 07 | **Cloudflare Access** | What the ZTNA gateway does, how it differs from a VPN, policy evaluation, the headers Access sends to your origin, service tokens, Tunnel. |
-| 08 | **Okta** | Org vs custom Authorization Server, application types, redirect URIs, scopes, claims, JWKS, lifetimes, `private_key_jwt`. |
-| 09 | **Setup Wizard** | 13-step guide to a working ZTNA: free Okta account → OIDC app → users & groups → auth server scopes/claims → free Cloudflare account → Zero Trust → Okta as IdP → Access application → policies → Tunnel → demo app → test login & deny → test automation. |
-| 10 | **Practice** | Three tabs: **Debug Lab** (16 misconfigurations and how they fail), **Attack Drills** (13 attacks and the protocol mechanism that stops each), **Decision Guide** (8 scenarios — pick the right flow). |
-| 11 | **Glossary** | 32 terms with live filter. |
+| 07 | **Cloudflare Access** | What the ZTNA gateway does, how it differs from a VPN, policy evaluation, the headers Access sends to your origin, service tokens, Tunnel. Includes the umbrella **Identity-Aware Proxy** comparison table. |
+| 08 | **AWS ALB + Cognito** | AWS's identity-aware proxy via ALB listener `authenticate-cognito` and `authenticate-oidc` actions. Listener rules, the `x-amzn-oidc-data` / `x-amzn-oidc-accesstoken` / `x-amzn-oidc-identity` headers, JWT verification using the regional public-keys endpoint, comparison to Cloudflare Access. |
+| 09 | **FortiGate ZTNA** | Fortinet's ZTNA Application Gateway pattern. The four components (FortiClient, EMS, FortiGate, external IdP), ZTNA tags and device posture, `proxy-policy` rule shape, request flow with mTLS device certificates, comparison vs SSL VPN, and the three-way IAP comparison table. |
+| 10 | **Okta** | Org vs custom Authorization Server, application types, redirect URIs, scopes, claims, JWKS, lifetimes, `private_key_jwt`. |
+| 11 | **Setup Wizard** | 13-step guide to a working ZTNA: free Okta account → OIDC app → users & groups → auth server scopes/claims → free Cloudflare account → Zero Trust → Okta as IdP → Access application → policies → Tunnel → demo app → test login & deny → test automation. |
+| 12 | **Practice** | Three tabs: **Debug Lab** (16 misconfigurations and how they fail), **Attack Drills** (13 attacks and the protocol mechanism that stops each), **Decision Guide** (8 scenarios — pick the right flow). |
+| 13 | **Glossary** | 32 terms with live filter. |
 
 ---
 
