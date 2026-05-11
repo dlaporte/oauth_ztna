@@ -585,7 +585,7 @@ ROUTES['okta'] = function (view) {
 
 ROUTES['setup'] = function (view) {
   setHTML(view, moduleHeader('11', 'identity · 02', 'Setup wizard.', `
-    The end-to-end recipe for a working ZTNA configuration: free Okta + free Cloudflare account, demo app, optional Tunnel.
+    The end-to-end recipe for a working ZTNA configuration, walked through with one concrete combination: free Okta + free Cloudflare account + demo app + optional Tunnel. The same shape — IdP app → gateway → access policy → backend verification — applies whether you pair Okta with <a class="linklike" href="#/cloudflare">Cloudflare Access</a>, <a class="linklike" href="#/aws-alb">AWS ALB + Cognito</a>, or <a class="linklike" href="#/fortigate">FortiGate ZTNA</a>; each of those modules documents the steps specific to its gateway.
   `) + `
     <section class="section">
       <div class="wizard">

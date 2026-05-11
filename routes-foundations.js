@@ -31,59 +31,71 @@ ROUTES['home'] = function (view) {
   setHTML(view, `
     <section class="hero">
       <div class="h-eyebrow">protocol lab · v1.0 · for engineers learning ztna</div>
-      <h1 class="hero__title">A hands-on lab for <em>OAuth&nbsp;2.0</em>, <em>OpenID&nbsp;Connect</em> and <em>Zero&nbsp;Trust</em> with Okta and Cloudflare Access.</h1>
+      <h1 class="hero__title">A hands-on lab for <em>OAuth&nbsp;2.0</em>, <em>OpenID&nbsp;Connect</em> and <em>Zero&nbsp;Trust</em>.</h1>
       <p class="lede hero__lede">
         OAuth 2.0 is the open standard for delegated authorization. OpenID Connect (<em>OIDC</em>) is the identity layer on top of it.
         Zero Trust Network Access (<em>ZTNA</em>) is the access model where every request is authenticated and authorized regardless of network location.
-        Build a working setup — Cloudflare Access protecting an app, Okta as the identity provider — then dismantle it and learn the protocol mechanics underneath.
+        Learn the protocol mechanics, then compare three production ZTNA gateways side by side — <em>Cloudflare Access</em>, <em>AWS ALB + Cognito</em>, and <em>FortiGate ZTNA</em> — paired with an OIDC identity provider such as Okta.
       </p>
       <div class="hero__cta">
         <a class="btn btn--primary" href="#/flow-lab">See a flow happen →</a>
-        <a class="btn" href="#/setup">Build the ZTNA setup</a>
+        <a class="btn" href="#/cloudflare">Compare ZTNA gateways</a>
         <a class="btn btn--ghost" href="#/oauth-vs-oidc">What's the difference between OAuth and OIDC?</a>
       </div>
       <div class="stat-row">
-        <div class="stat"><div class="stat__num">12</div><div class="stat__label">modules</div></div>
+        <div class="stat"><div class="stat__num">14</div><div class="stat__label">modules</div></div>
+        <div class="stat"><div class="stat__num">03</div><div class="stat__label">ztna gateways</div></div>
         <div class="stat"><div class="stat__num">06</div><div class="stat__label">animated flows</div></div>
         <div class="stat"><div class="stat__num">16</div><div class="stat__label">debug labs</div></div>
-        <div class="stat"><div class="stat__num">13</div><div class="stat__label">attack drills</div></div>
       </div>
     </section>
 
     <section class="section">
-      <div class="kicker">what you'll build</div>
-      <h2 style="margin-top:8px">A working ZTNA setup, then dismantle it to see what's underneath.</h2>
+      <div class="kicker">the three roles</div>
+      <h2 style="margin-top:8px">Every ZTNA setup has three pieces.</h2>
+      <p class="lede" style="margin-top:10px">Whichever gateway you pick, the architecture is the same: an identity provider authenticates the user, an identity-aware proxy enforces access policy at the perimeter, and your application receives a verifiable assertion of who's calling.</p>
       <div class="grid grid--3" style="margin-top:22px">
         <div class="card card--accent">
-          <div class="card__title"><span class="tag tag--amber">okta</span> identity provider</div>
-          <p>The authorization server. It authenticates users, mints access &amp; ID tokens, and exposes JWKS for verification.</p>
+          <div class="card__title"><span class="tag tag--amber">identity provider</span></div>
+          <p>The authorization server. Authenticates users, mints access &amp; ID tokens, and exposes JWKS for verification. This lab uses <strong>Okta</strong>; the same role is filled by Azure Entra ID, Google, Auth0, Cognito user pools, FortiAuthenticator, etc.</p>
         </div>
         <div class="card card--cyan">
-          <div class="card__title"><span class="tag tag--cyan">cloudflare access</span> ZTNA gateway</div>
-          <p>The identity-aware proxy. It demands authentication, evaluates per-app policies, and forwards a signed assertion to your origin.</p>
+          <div class="card__title"><span class="tag tag--cyan">ztna gateway</span> <span class="muted fineprint">(identity-aware proxy)</span></div>
+          <p>Sits in front of the app. Demands authentication, evaluates per-app policies, and forwards a signed assertion to the origin. Three options compared here:</p>
+          <ul class="split__list" style="margin-top:8px">
+            <li><a class="linklike" href="#/cloudflare">Cloudflare Access</a></li>
+            <li><a class="linklike" href="#/aws-alb">AWS ALB + Cognito</a></li>
+            <li><a class="linklike" href="#/fortigate">FortiGate ZTNA</a></li>
+          </ul>
         </div>
         <div class="card">
-          <div class="card__title"><span class="tag">demo app</span> protected resource</div>
-          <p>The thing you're protecting. Verifies the Cloudflare JWT and (if it has its own API) verifies Okta access tokens too.</p>
+          <div class="card__title"><span class="tag">your application</span></div>
+          <p>The thing you're protecting. Verifies the gateway's signed assertion (CF JWT, ALB <code>x-amzn-oidc-data</code>, FortiGate headers + mTLS) and — if it exposes its own API — verifies Okta-issued access tokens too.</p>
         </div>
       </div>
     </section>
 
     <section class="section">
-      <div class="kicker">three ways in</div>
+      <div class="kicker">four ways in</div>
       <h2 style="margin-top:8px">Pick a track. Switch any time.</h2>
-      <p class="lede" style="margin-top:10px">There's a sidebar with all twelve modules — but if you don't know where to start, here are the three on-ramps that make sense for the most common audiences.</p>
-      <div class="grid grid--3" style="margin-top:22px">
+      <p class="lede" style="margin-top:10px">There's a sidebar with all fourteen modules — but if you don't know where to start, here are the on-ramps that make sense for the most common audiences.</p>
+      <div class="grid grid--auto-260" style="margin-top:22px">
         <div class="card card--accent">
           <div class="minihead">i'm new to oauth/oidc</div>
           <h3>Live first, theory next</h3>
           <p class="muted" style="margin-top:6px">Start with an animated flow, then unpack what's in the messages. Tokens, layers, scopes — each grounded in something you've already watched happen.</p>
-          <div style="margin-top:12px"><a class="linklike" href="#/flow-lab">Watch a flow → Tokens → OAuth vs OIDC</a></div>
+          <div style="margin-top:12px"><a class="linklike" href="#/flow-lab">Watch a flow → Tokens → OIDC</a></div>
         </div>
         <div class="card card--cyan">
-          <div class="minihead">i need to set up ztna</div>
-          <h3>Wire Cloudflare to Okta</h3>
-          <p class="muted" style="margin-top:6px">A 13-step guide that takes you from a free Okta account to a working ZTNA gate over a demo app, including service tokens for automation.</p>
+          <div class="minihead">i'm comparing ztna options</div>
+          <h3>Three gateways, same OIDC underneath</h3>
+          <p class="muted" style="margin-top:6px">Read the gateway modules side by side. Each one covers the same patterns (auth headers, signed assertion to origin, policy model) for its product.</p>
+          <div style="margin-top:12px"><a class="linklike" href="#/cloudflare">Cloudflare Access</a> · <a class="linklike" href="#/aws-alb">AWS ALB</a> · <a class="linklike" href="#/fortigate">FortiGate ZTNA</a></div>
+        </div>
+        <div class="card">
+          <div class="minihead">i'm building one out</div>
+          <h3>End-to-end recipe</h3>
+          <p class="muted" style="margin-top:6px">The Setup Wizard walks through a complete working setup (using Cloudflare Access as the worked example). The AWS ALB and FortiGate modules document the equivalent setup steps for those gateways.</p>
           <div style="margin-top:12px"><a class="linklike" href="#/setup">Open the setup wizard →</a></div>
         </div>
         <div class="card">
@@ -392,8 +404,9 @@ ROUTES['oauth-vs-oidc'] = function (view) {
 
 ROUTES['three-layers'] = function (view) {
   setHTML(view, moduleHeader('04', 'concepts · 03', 'Three layers, three jobs.', `
-    Most ZTNA confusion is about <em>which</em> layer is supposed to do <em>what</em>.
-    Get this map right and the rest of the system makes sense.
+    Most ZTNA confusion is about <em>which</em> layer is supposed to do <em>what</em>. Get this map right and the rest of the system makes sense.
+    The illustration uses Okta + Cloudflare Access as a worked example, but the same three-layer structure applies to any IdP + gateway pair —
+    Okta + AWS ALB, Okta + FortiGate, Entra ID + Google IAP, and so on.
   `) + `
     <section class="section">
       <div class="grid grid--3">
@@ -410,13 +423,13 @@ ROUTES['three-layers'] = function (view) {
         </div>
         <div class="card" style="border-color:rgba(244,114,182,.35);background:linear-gradient(180deg,rgba(244,114,182,.05),transparent 60%),var(--surface)">
           <div class="minihead" style="color:var(--lane-cf)">layer 2</div>
-          <h3>Cloudflare Access — ZTNA gateway</h3>
+          <h3>ZTNA gateway — identity-aware proxy</h3>
           <ul class="split__list" style="margin-top:10px">
-            <li>Sits in front of the app at the network edge.</li>
-            <li>Outsources authentication to Okta via OIDC.</li>
-            <li>Evaluates Access policies (allow / deny / require) per request.</li>
-            <li>Issues its own short-lived JWT (CF_Authorization) to forward to the origin.</li>
-            <li>Optionally pulls private apps to the edge via Cloudflare Tunnel.</li>
+            <li>Sits in front of the app at the network or cloud edge.</li>
+            <li>Outsources authentication to the IdP (Okta) via OIDC or SAML.</li>
+            <li>Evaluates per-application policies (allow / deny / require) per request.</li>
+            <li>Forwards a signed assertion of the user's identity to the origin.</li>
+            <li>Common implementations: Cloudflare Access, AWS ALB authentication, FortiGate ZTNA, Google IAP, Azure App Proxy, oauth2-proxy.</li>
           </ul>
         </div>
         <div class="card" style="border-color:rgba(134,239,172,.35);background:linear-gradient(180deg,rgba(134,239,172,.05),transparent 60%),var(--surface)">

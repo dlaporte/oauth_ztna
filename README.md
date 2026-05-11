@@ -1,8 +1,8 @@
 # Protocol Lab
 
-> An interactive, single-page lab for learning **OAuth 2.0**, **OpenID Connect (OIDC)**, and **Zero Trust Network Access (ZTNA)** — configured with **Okta** as the identity provider and **Cloudflare Access** as the ZTNA gateway.
+> An interactive, single-page lab for learning **OAuth 2.0**, **OpenID Connect (OIDC)**, and **Zero Trust Network Access (ZTNA)**. Compare three production ZTNA gateways — **Cloudflare Access**, **AWS ALB + Cognito**, and **FortiGate ZTNA** — paired with an OIDC identity provider such as **Okta**.
 
-The practical goal is to help you stand up a working ZTNA setup. The educational goal is to teach the protocol mechanics underneath, so you understand what every redirect, header, and JWT is actually doing.
+The practical goal is to help you stand up a working ZTNA setup with whichever gateway fits your environment. The educational goal is to teach the protocol mechanics underneath, so you understand what every redirect, header, and JWT is actually doing — and why all three gateways share the same OIDC core.
 
 ---
 
@@ -27,8 +27,7 @@ The sidebar groups twelve modules into four tracks. You can read them in order, 
 |---|---|
 | **Start here** | First time? Open the **Overview** and click "See a flow happen". |
 | **Concepts** | Want to understand OIDC, tokens, scopes, and how the three system layers fit together. |
-| **ZTNA Gateways** | Compare Cloudflare Access, AWS ALB + Cognito, and FortiGate ZTNA — three implementations of the same Identity-Aware Proxy pattern. |
-| **Identity & build** | Setting up the real thing? Open **Setup Wizard**. The **Okta** module is reference for the IdP side. |
+| **Platforms** | The three gateway modules (Cloudflare Access, AWS ALB + Cognito, FortiGate ZTNA), plus **Okta** for the IdP side and the **Setup Wizard** for an end-to-end build. |
 | **Apply** | Debugging an issue, drilling on attacks, or trying to pick the right OAuth flow. |
 
 ### Module list
