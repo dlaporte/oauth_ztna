@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Protocol Lab — OAuth, OIDC &amp; ZTNA with Okta + Cloudflare Access</title>
+<meta name="description" content="An interactive lab for learning OAuth 2.0, OpenID Connect, and Cloudflare ZTNA configured with Okta as identity provider." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=Geist:wght@300..700&family=JetBrains+Mono:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="brand__mark" aria-hidden="true">
+      <svg viewBox="0 0 32 32" width="28" height="28">
+        <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="1.25"/>
+        <circle cx="16" cy="16" r="7" fill="none" stroke="currentColor" stroke-width="1.25"/>
+        <line x1="16" y1="2" x2="16" y2="9" stroke="currentColor" stroke-width="1.25"/>
+        <line x1="16" y1="23" x2="16" y2="30" stroke="currentColor" stroke-width="1.25"/>
+        <line x1="2" y1="16" x2="9" y2="16" stroke="currentColor" stroke-width="1.25"/>
+        <line x1="23" y1="16" x2="30" y2="16" stroke="currentColor" stroke-width="1.25"/>
+        <circle cx="16" cy="16" r="1.6" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="brand__text">
+      <div class="brand__title">Protocol Lab</div>
+      <div class="brand__sub">OAuth · OIDC · ZTNA</div>
+    </div>
+  </div>
+
+  <nav class="nav" aria-label="Modules">
+    <div class="nav__group">
+      <div class="nav__heading">Start here</div>
+      <a class="nav__item" data-route="home">
+        <span class="nav__num">00</span>
+        <span class="nav__label">Overview</span>
+      </a>
+      <a class="nav__item" data-route="flow-lab">
+        <span class="nav__num">01</span>
+        <span class="nav__label">Flow Lab</span>
+      </a>
+    </div>
+
+    <div class="nav__group">
+      <div class="nav__heading">Concepts</div>
+      <a class="nav__item" data-route="oauth-vs-oidc">
+        <span class="nav__num">02</span>
+        <span class="nav__label">How OIDC Works</span>
+      </a>
+      <a class="nav__item" data-route="tokens">
+        <span class="nav__num">03</span>
+        <span class="nav__label">Tokens</span>
+      </a>
+      <a class="nav__item" data-route="three-layers">
+        <span class="nav__num">04</span>
+        <span class="nav__label">The Three Layers</span>
+      </a>
+      <a class="nav__item" data-route="scopes-aud-claims">
+        <span class="nav__num">05</span>
+        <span class="nav__label">Scopes · Audiences · Claims</span>
+      </a>
+      <a class="nav__item" data-route="interactive-vs-headless">
+        <span class="nav__num">06</span>
+        <span class="nav__label">Interactive vs Headless</span>
+      </a>
+    </div>
+
+    <div class="nav__group">
+      <div class="nav__heading">Platforms</div>
+      <a class="nav__item" data-route="cloudflare">
+        <span class="nav__num">07</span>
+        <span class="nav__label">Cloudflare Access</span>
+      </a>
+      <a class="nav__item" data-route="okta">
+        <span class="nav__num">08</span>
+        <span class="nav__label">Okta</span>
+      </a>
+      <a class="nav__item" data-route="setup">
+        <span class="nav__num">09</span>
+        <span class="nav__label">Setup Wizard</span>
+      </a>
+    </div>
+
+    <div class="nav__group">
+      <div class="nav__heading">Apply</div>
+      <a class="nav__item" data-route="practice">
+        <span class="nav__num">10</span>
+        <span class="nav__label">Practice</span>
+      </a>
+      <a class="nav__item" data-route="glossary">
+        <span class="nav__num">11</span>
+        <span class="nav__label">Glossary</span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="sidebar__footer">
+    <div class="level-toggle" role="tablist" aria-label="View depth">
+      <button class="level-toggle__btn" data-level="beginner" role="tab">Beginner</button>
+      <button class="level-toggle__btn is-active" data-level="intermediate" role="tab">Intermediate</button>
+      <button class="level-toggle__btn" data-level="advanced" role="tab">Advanced</button>
+    </div>
+    <div class="meta">
+      <span>Tenant</span>
+      <code>okta.example.com</code>
+    </div>
+    <div class="meta">
+      <span>ZTNA team</span>
+      <code>team.cloudflareaccess.com</code>
+    </div>
+  </div>
+</aside>
+
+<main class="main" id="main">
+  <header class="topbar">
+    <button class="iconbtn" id="menuBtn" aria-label="Toggle menu">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+    </button>
+    <div class="crumbs" id="crumbs">
+      <span class="crumbs__home">Lab</span>
+      <span class="crumbs__sep">/</span>
+      <span class="crumbs__current">Overview</span>
+    </div>
+    <div class="topbar__spacer"></div>
+    <div class="topbar__status" aria-hidden="true">
+      <span class="dot"></span>
+      <span>session live</span>
+    </div>
+  </header>
+
+  <div id="level-banners">
+    <div class="level-banner level-banner--beginner">
+      <strong>Beginner mode is on.</strong> Protocol-level details (packet captures, validation chips, legends) are hidden so you can focus on the high-level flow. Switch to <em>Intermediate</em> in the sidebar to see the raw HTTP exchanges.
+    </div>
+    <div class="level-banner level-banner--advanced">
+      <strong>Advanced mode is on.</strong> Extra deep-dive callouts are now visible: DPoP, discovery endpoints, redirect_uri exact-match rules, algorithm pinning, and other edge cases.
+    </div>
+  </div>
+
+  <div class="view" id="view">
+    <!-- module content rendered here -->
+  </div>
+
+  <footer class="appfoot">
+    <div class="appfoot__row">
+      <div>Protocol Lab — for educational use. Sample tenant identifiers are fictional placeholders (<code>okta.example.com</code>, <code>team.cloudflareaccess.com</code>).</div>
+      <div class="appfoot__keys">
+        <kbd>←</kbd><kbd>→</kbd><span>navigate modules</span>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+<script src="./routes-foundations.js"></script>
+<script src="./routes-flows.js"></script>
+<script src="./routes-platforms.js"></script>
+<script src="./routes-practice.js"></script>
+<script src="./boot.js"></script>
+</body>
+</html>
