@@ -84,7 +84,7 @@ ROUTES['practice'] = function (view, params) {
   ];
   const initial = TABS.find(t => t.id === params.tab) ? params.tab : 'debug';
 
-  setHTML(view, moduleHeader('12', 'apply · 01', 'Practice — predict, then reveal.', `
+  setHTML(view, moduleHeader('13', 'apply · 01', 'Practice — predict, then reveal.', `
     Three drills, one place. Switch between debugging real misconfigurations, defending against textbook OAuth attacks, and picking the right flow for a scenario.
   `) + `
     <section class="section">
@@ -148,7 +148,7 @@ ROUTES['practice'] = function (view, params) {
 };
 
 ROUTES['glossary'] = function (view) {
-  setHTML(view, moduleHeader('13', 'reference', 'Glossary.', `
+  setHTML(view, moduleHeader('14', 'reference', 'Glossary.', `
     The vocabulary you'll see throughout the lab. Filter live.
   `) + `
     <section class="section">

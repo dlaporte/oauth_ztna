@@ -159,7 +159,7 @@ ROUTES['flow-lab'] = function (view, params) {
 };
 
 ROUTES['interactive-vs-headless'] = function (view) {
-  setHTML(view, moduleHeader('06', 'concepts · 05', 'Interactive vs Headless authentication.', `
+  setHTML(view, moduleHeader('07', 'concepts · 06', 'Interactive vs Headless authentication.', `
     Three patterns dominate everything you'll build. Pick by asking: <em>is there a real human in front of a browser?</em>
     The interactive pattern uses the Device Authorization Grant; the headless pattern uses Client Credentials with private_key_jwt
     (a client authentication method that signs a short-lived JWT with the client's private key); the gateway-only pattern uses Cloudflare service tokens.

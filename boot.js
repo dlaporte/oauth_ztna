@@ -6,14 +6,15 @@ const { $, $$, setHTML, annotateAcronyms } = window.PL_app;
 // Live-first ordering: Flow Lab is the entry point right after Overview.
 const ORDER = [
   'home','flow-lab',
-  'oauth-vs-oidc','tokens','three-layers','scopes-aud-claims','interactive-vs-headless',
+  'oauth','oauth-vs-oidc','tokens','three-layers','scopes-aud-claims','interactive-vs-headless',
   'cloudflare','aws-alb','fortigate',
   'okta','setup',
   'practice','glossary'
 ];
 const TITLES = {
   'home':'Overview','flow-lab':'Flow Lab',
-  'oauth-vs-oidc':'How OIDC Works','tokens':'Tokens','three-layers':'The Three Layers',
+  'oauth':'How OAuth Works','oauth-vs-oidc':'How OIDC Works',
+  'tokens':'Tokens','three-layers':'The Three Layers',
   'scopes-aud-claims':'Scopes · Audiences · Claims','interactive-vs-headless':'Interactive vs Headless',
   'cloudflare':'Cloudflare Access','aws-alb':'AWS ALB + Cognito','fortigate':'FortiGate ZTNA',
   'okta':'Okta','setup':'Setup Wizard',

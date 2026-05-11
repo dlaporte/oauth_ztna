@@ -16,7 +16,7 @@ function moduleHeader(num, eyebrow, title, lede) {
 }
 
 ROUTES['cloudflare'] = function (view) {
-  setHTML(view, moduleHeader('07', 'gateways · 01', 'Cloudflare Access — Cloudflare\'s ZTNA gateway.', `
+  setHTML(view, moduleHeader('08', 'gateways · 01', 'Cloudflare Access — Cloudflare\'s ZTNA gateway.', `
     Cloudflare Access is an identity-aware reverse proxy living at Cloudflare's edge. It implements Zero Trust Network Access (ZTNA):
     every request is authenticated and authorized before it reaches the origin. Access demands authentication, evaluates
     per-application policies, and forwards a signed assertion to your origin. It is not your Identity Provider (IdP) — that's still Okta.
@@ -193,7 +193,7 @@ ROUTES['cloudflare'] = function (view) {
    AWS ALB + Cognito
    ============================================================ */
 ROUTES['aws-alb'] = function (view) {
-  setHTML(view, moduleHeader('08', 'gateways · 02', 'AWS ALB + Cognito — AWS\'s identity-aware proxy.', `
+  setHTML(view, moduleHeader('09', 'gateways · 02', 'AWS ALB + Cognito — AWS\'s identity-aware proxy.', `
     AWS Application Load Balancer (ALB) has authentication actions built into its listener rules. When a request hits a protected path,
     the ALB itself runs the OIDC dance with an Identity Provider — most natively with Amazon Cognito, but optionally with any standards-compliant
     OIDC IdP including Okta. After the user signs in, the ALB attaches signed identity headers to the request and forwards it to your target.
@@ -336,7 +336,7 @@ groups  = payload['custom:groups']</pre>
    FortiGate ZTNA
    ============================================================ */
 ROUTES['fortigate'] = function (view) {
-  setHTML(view, moduleHeader('09', 'gateways · 03', 'FortiGate ZTNA — the enterprise-appliance gateway.', `
+  setHTML(view, moduleHeader('10', 'gateways · 03', 'FortiGate ZTNA — the enterprise-appliance gateway.', `
     Fortinet's ZTNA Application Gateway turns a FortiGate firewall into an identity-aware reverse proxy. It pairs with
     FortiClient (on the endpoint) and FortiClient EMS (for posture &amp; tag evaluation) to gate access based not just on <em>who</em>
     the user is, but on the <em>state of the device</em> they're connecting from.
@@ -483,7 +483,7 @@ end</pre>
 };
 
 ROUTES['okta'] = function (view) {
-  setHTML(view, moduleHeader('10', 'identity · 01', 'Okta — the identity provider.', `
+  setHTML(view, moduleHeader('11', 'identity · 01', 'Okta — the identity provider.', `
     Okta plays three roles in this lab: directory (users + groups), identity provider (login UI + Multi-Factor Authentication),
     and authorization server (issues tokens at standard OAuth and OpenID Connect endpoints).
   `) + `
@@ -584,7 +584,7 @@ ROUTES['okta'] = function (view) {
 };
 
 ROUTES['setup'] = function (view) {
-  setHTML(view, moduleHeader('11', 'identity · 02', 'Setup wizard.', `
+  setHTML(view, moduleHeader('12', 'identity · 02', 'Setup wizard.', `
     The end-to-end recipe for a working ZTNA configuration, walked through with one concrete combination: free Okta + free Cloudflare account + demo app + optional Tunnel. The same shape — IdP app → gateway → access policy → backend verification — applies whether you pair Okta with <a class="linklike" href="#/cloudflare">Cloudflare Access</a>, <a class="linklike" href="#/aws-alb">AWS ALB + Cognito</a>, or <a class="linklike" href="#/fortigate">FortiGate ZTNA</a>; each of those modules documents the steps specific to its gateway.
   `) + `
     <section class="section">

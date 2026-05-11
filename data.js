@@ -353,6 +353,97 @@ PL.flows['oidc-conceptual'] = {
   ]
 };
 
+/* === Conceptual OAuth flow ===
+   For the OAuth tutorial. Pure delegated-access scenario — the client wants
+   to call an API on the user's behalf and does NOT need to know who the user
+   is. No id_token, no openid scope. Same Authorization Code mechanics. */
+PL.flows['oauth-conceptual'] = {
+  id: 'oauth-conceptual',
+  title: 'OAuth at the conceptual level',
+  deck: 'Delegated access to an API — the client never learns who the user is.',
+  conceptual: true,
+  lanes: ['user', 'browser', 'client', 'okta', 'api'],
+  steps: [
+    {
+      from: 'user', to: 'client', label: 'User wants the client to act on the API',
+      channel: 'front',
+      packet: { method: 'CLICK', url: 'calendar-sync.example.com (third-party tool)',
+        body: '<comment># A third-party tool wants to read the user\'s calendar entries from an API the user controls.\n# Pre-OAuth, the user would have to hand over their password. OAuth\'s entire job is to avoid that.</comment>' },
+      note: 'OAuth\'s founding problem: how to let a third-party application access your data without giving it your password.'
+    },
+    {
+      from: 'client', to: 'browser', label: 'Client redirects user to the AS, naming what it wants',
+      channel: 'front',
+      packet: { method: 'REDIRECT', url: 'okta.example.com/oauth2/default/v1/authorize?scope=calendar:read',
+        body: '<comment># The client states exactly what permissions it needs via the `scope` parameter.\n# Note: no `openid` scope here — this is pure OAuth, no identity layer involved.</comment>' },
+      note: 'Scopes are OAuth\'s permission language. The client states what it needs; the user (or admin) decides whether to grant it.'
+    },
+    {
+      from: 'user', to: 'okta', label: 'User authenticates and consents',
+      channel: 'front',
+      packet: { method: 'PROMPT', url: 'okta.example.com (login + consent screen)',
+        body: '<comment># 1. User logs in to the AS (so the AS knows who is granting consent).\n# 2. Consent screen: "calendar-sync wants to read your calendar. [Allow] [Deny]"\n# The user can approve some scopes and decline others.</comment>' },
+      note: 'In a corporate IdP this consent is often pre-approved by an admin and the screen is skipped — but the model is the same: a human (or proxy thereof) authorizes the scopes.'
+    },
+    {
+      from: 'okta', to: 'browser', label: 'AS issues a short-lived authorization code',
+      channel: 'front',
+      packet: { method: 'REDIRECT', url: 'calendar-sync.example.com/callback?code=…',
+        body: '<comment># A claim ticket. Not a token. Cannot call the API directly. The client must redeem it.</comment>' },
+      note: 'The code separates the front-channel handoff from the actual token issuance, which happens on the back channel.'
+    },
+    {
+      from: 'client', to: 'okta', label: 'Client exchanges code for access_token (back channel)',
+      channel: 'back',
+      packet: { method: 'POST', url: 'okta.example.com/oauth2/default/v1/token',
+        body: '<comment># Server-to-server. The client authenticates itself (client_secret or private_key_jwt),\n# presents the code, and receives the access_token. Tokens never travel through the browser.</comment>' },
+      note: 'Back-channel exchange. This is the design choice that keeps tokens off the user-agent.'
+    },
+    {
+      from: 'okta', to: 'client', label: 'AS returns access_token (no id_token)',
+      channel: 'back',
+      packet: { method: 'POST', url: '↩ token response',
+        body: [
+          '{',
+          '  "<key>access_token</key>": "<secret>eyJ… (JWT or opaque)</secret>",',
+          '  "<key>token_type</key>": "Bearer",',
+          '  "<key>scope</key>": "calendar:read",       <comment># what was actually granted</comment>',
+          '  "<key>expires_in</key>": 3600',
+          '  <comment># no id_token — the client doesn\'t need to know who the user is</comment>',
+          '}'
+        ].join('\n') },
+      note: 'A pure OAuth response: access_token plus the granted scopes (which may be a subset of what was requested).'
+    },
+    {
+      from: 'client', to: 'api', label: 'Client calls the API with the bearer token',
+      channel: 'back',
+      packet: { method: 'GET', url: 'api.example.com/calendar/entries',
+        body: 'Authorization: Bearer <secret>eyJ… access_token</secret>' },
+      note: 'The token is opaque to the client — it just carries it. The Resource Server is the one that interprets and validates it.'
+    },
+    {
+      from: 'api', to: 'api', label: 'Resource Server validates the token + scope',
+      channel: 'back',
+      packet: { method: 'COMPUTE', url: 'in the API',
+        body: [
+          '<key>iss</key>    ✓ token came from a trusted Authorization Server',
+          '<key>aud</key>    ✓ token is for THIS API (not some other one)',
+          '<key>exp</key>    ✓ not expired',
+          '<key>scope</key>  ✓ includes calendar:read (matches the action)',
+          '<key>sub</key>    ⇒ on whose behalf is this call? (for tenancy / row-level checks)'
+        ].join('\n') },
+      note: 'The API enforces the OAuth contract: only accept tokens for yourself, with the required scopes, from trusted issuers.'
+    },
+    {
+      from: 'api', to: 'client', label: '200 OK: calendar entries',
+      channel: 'back',
+      packet: { method: 'GET', url: '↩ /calendar/entries response',
+        body: '[ { "id": 1, "title": "1:1 with manager", "start": "…" }, … ]' },
+      note: 'OAuth ends here. The client never learned who the user is — only that it has been authorized to act on their behalf at this API.'
+    }
+  ]
+};
+
 /* === Authorization Code + PKCE === */
 
 PL.flows['authcode-pkce'] = {

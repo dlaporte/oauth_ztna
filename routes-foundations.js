@@ -17,10 +17,11 @@ function moduleHeader(num, eyebrow, title, lede) {
   `;
 }
 
-const ORDER = ['home','flow-lab','oauth-vs-oidc','tokens','three-layers','scopes-aud-claims',
+const ORDER = ['home','flow-lab','oauth','oauth-vs-oidc','tokens','three-layers','scopes-aud-claims',
   'interactive-vs-headless','cloudflare','aws-alb','fortigate','okta','setup','practice','glossary'];
 const TITLES = {
-  'home':'Overview','flow-lab':'Flow Lab','oauth-vs-oidc':'How OIDC Works',
+  'home':'Overview','flow-lab':'Flow Lab',
+  'oauth':'How OAuth Works','oauth-vs-oidc':'How OIDC Works',
   'tokens':'Tokens','three-layers':'The Three Layers','scopes-aud-claims':'Scopes · Audiences · Claims',
   'interactive-vs-headless':'Interactive vs Headless','cloudflare':'Cloudflare Access',
   'aws-alb':'AWS ALB + Cognito','fortigate':'FortiGate ZTNA','okta':'Okta',
@@ -145,8 +146,149 @@ ROUTES['home'] = function (view) {
   `);
 };
 
+ROUTES['oauth'] = function (view) {
+  setHTML(view, moduleHeader('02', 'concepts · 01', 'How <em>OAuth&nbsp;2.0</em> works.', `
+    OAuth 2.0 is how one application gets permission to call an API <em>on behalf of</em> a user — without ever seeing the user's password.
+    It's the foundation that OpenID Connect sits on top of. Understand OAuth first; OIDC then becomes "OAuth, plus a way to also know who the user is".
+  `) + `
+
+    <section class="section">
+      <div class="kicker">why oauth exists</div>
+      <h2 style="margin-top:8px">The password-sharing problem.</h2>
+      <p class="lede" style="margin-top:10px">In the pre-OAuth web, the only way to let one application access your data on another was to give it your password. A photo-printing service wanting your Flickr pictures? Hand over your Flickr password. A budgeting tool wanting your bank statements? Hand over your bank login. Three problems came along with this:</p>
+      <div class="grid grid--3" style="margin-top:18px">
+        <div class="risk">
+          <div class="risk__head">over-privileged</div>
+          <p>The third party can do <em>anything</em> you can do — delete photos, change your password, drain the account. There's no "read only".</p>
+        </div>
+        <div class="risk">
+          <div class="risk__head">unrevocable</div>
+          <p>To "revoke" the third party's access, you have to change your password — which breaks every other place you used it.</p>
+        </div>
+        <div class="risk">
+          <div class="risk__head">contagious</div>
+          <p>The third party stores your password. A breach there is a breach of every account that shares that password.</p>
+        </div>
+      </div>
+      <p class="lede" style="margin-top:18px">OAuth 2.0 (RFC 6749, 2012) solved this with <strong>scoped, revocable, password-free delegation</strong>. The user authorizes specific permissions for a specific client; the third party gets a token, not a password; the user can revoke any time.</p>
+    </section>
+
+    <section class="section">
+      <div class="kicker">the principals</div>
+      <h2 style="margin-top:8px">Four roles in every OAuth exchange.</h2>
+      <p class="lede" style="margin-top:10px">These names are formal OAuth terminology. When you reach the OIDC module, you'll see the same actors with renamed roles (Client → Relying Party, AS → OpenID Provider). They're the same people; the naming differs by purpose.</p>
+      <div class="grid grid--auto-260" style="margin-top:22px">
+        <div class="card card--accent">
+          <div class="minihead">role 1</div>
+          <h3 style="margin-top:6px">Resource Owner</h3>
+          <p class="muted" style="margin-top:6px">The user who owns the data being accessed. Almost always a person, occasionally a service account.</p>
+        </div>
+        <div class="card card--cyan">
+          <div class="minihead">role 2</div>
+          <h3 style="margin-top:6px">Client</h3>
+          <p class="muted" style="margin-top:6px">The application requesting access on the user's behalf. The third-party tool, the SPA, the CLI, the integration. <em>Not</em> the human.</p>
+        </div>
+        <div class="card">
+          <div class="minihead">role 3</div>
+          <h3 style="margin-top:6px">Authorization Server (AS)</h3>
+          <p class="muted" style="margin-top:6px">The service the Resource Owner trusts to handle authentication and issue tokens. In this lab, that's <strong>Okta</strong>.</p>
+        </div>
+        <div class="card">
+          <div class="minihead">role 4</div>
+          <h3 style="margin-top:6px">Resource Server</h3>
+          <p class="muted" style="margin-top:6px">The API that holds the protected data. Validates incoming access tokens and serves the request if the token has the right scope.</p>
+        </div>
+      </div>
+      <div class="note" style="margin-top:18px">
+        <div class="note__head">AS and Resource Server are often run by the same vendor</div>
+        <div>Google Calendar's Authorization Server (<code>accounts.google.com</code>) and its Resource Server (<code>googleapis.com/calendar/v3</code>) are operated by the same company. But conceptually they're separate roles — one mints tokens, the other accepts them. Understanding them as separate makes the protocol clearer.</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="kicker">the exchange</div>
+      <h2 style="margin-top:8px">Pure OAuth — no identity layer.</h2>
+      <p class="lede" style="margin-top:10px">Watch a complete OAuth exchange where the client just wants to <em>call an API on the user's behalf</em>. The client doesn't learn (and doesn't need to learn) who the user is — only that it has been authorized to act for them. This is the case where OIDC isn't needed.</p>
+      <div id="oauth-conceptual-flow" style="margin-top:22px"></div>
+    </section>
+
+    <section class="section">
+      <div class="kicker">scopes</div>
+      <h2 style="margin-top:8px">OAuth's permission language.</h2>
+      <p class="lede" style="margin-top:10px">A <strong>scope</strong> is a named permission that the client requests and the Resource Owner (or admin) grants. Scopes are how OAuth answers "what is this token allowed to do?". They are the difference between "this token can do anything" and "this token can read your calendar, nothing else".</p>
+      <div class="grid grid--2" style="margin-top:18px">
+        <div class="card">
+          <div class="minihead">how scopes flow</div>
+          <h3>Request → grant → enforce</h3>
+          <ol style="margin-top:10px;padding-left:18px;color:var(--ink-2);line-height:1.7">
+            <li><strong>Client requests</strong> scopes when calling <code>/authorize</code> (e.g. <code>scope=calendar:read</code>).</li>
+            <li><strong>User (or admin) grants</strong> the scopes, possibly a subset of what was asked.</li>
+            <li><strong>AS records</strong> the granted scopes in the access token (in the <code>scope</code> or <code>scp</code> claim).</li>
+            <li><strong>Resource Server enforces</strong> them per endpoint ("require <code>calendar:write</code> for POST").</li>
+          </ol>
+        </div>
+        <div class="card">
+          <div class="minihead">common conventions</div>
+          <h3>How scopes are named</h3>
+          <ul class="split__list" style="margin-top:10px">
+            <li><code>resource:action</code> — e.g. <code>orders:read</code>, <code>repo:write</code>, <code>calendar:delete</code>. Used by Okta, GitHub, many SaaS.</li>
+            <li><code>service.scope</code> — Google style: <code>https://www.googleapis.com/auth/calendar.readonly</code>.</li>
+            <li>OIDC standards: <code>openid</code>, <code>profile</code>, <code>email</code>, <code>address</code>, <code>phone</code>, <code>offline_access</code>.</li>
+            <li>No central registry. Each AS defines its own scope vocabulary.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="risk" style="margin-top:18px">
+        <div class="risk__head">scopes are delegation, not authorization</div>
+        <p>A scope says <em>"the client is allowed to attempt this action on the user's behalf"</em>. It does <strong>not</strong> say <em>"the user is allowed to do this on this specific resource"</em>. That second decision belongs to the Resource Server using its own business rules. Granting <code>orders:write</code> doesn't override per-tenant or per-row permissions; it just opens the door to <em>try</em>.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="kicker">grants</div>
+      <h2 style="margin-top:8px">Same OAuth, different starting situations.</h2>
+      <p class="lede" style="margin-top:10px">OAuth defines several <em>grant types</em> — variations of the exchange tailored to different client+user situations. They all end with the client receiving an access_token; what varies is how the exchange begins.</p>
+      <table class="ctable" style="margin-top:18px">
+        <thead><tr><th>Grant</th><th>Used when</th><th>What kicks it off</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Authorization Code</strong> (+ PKCE)</td><td>User is present at a browser</td><td>Redirect to <code>/authorize</code></td></tr>
+          <tr><td><strong>Device Authorization</strong></td><td>Client has no browser (CLI, TV)</td><td>Display a code &amp; URL to the user</td></tr>
+          <tr><td><strong>Client Credentials</strong></td><td>No user — machine-to-machine</td><td>POST directly to <code>/token</code></td></tr>
+          <tr><td><strong>Refresh Token</strong></td><td>Renewing a session without user interaction</td><td>POST to <code>/token</code> with refresh_token</td></tr>
+          <tr><td class="muted"><strong>Implicit</strong> (deprecated)</td><td class="muted">Old SPA pattern, tokens in URL fragment</td><td class="muted">Replaced by Auth Code + PKCE</td></tr>
+          <tr><td class="muted"><strong>Resource Owner Password</strong> (deprecated)</td><td class="muted">Legacy systems; the anti-pattern OAuth was designed to avoid</td><td class="muted">Removed in OAuth 2.1</td></tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin-top:14px">Each grant gets a full protocol-level walk-through in the <a class="linklike" href="#/flow-lab">Flow Lab</a> module.</p>
+    </section>
+
+    <section class="section">
+      <div class="kicker">when oauth isn't enough</div>
+      <h2 style="margin-top:8px">OAuth tells you <em>what</em>, not <em>who</em>.</h2>
+      <p class="lede" style="margin-top:10px">OAuth's job is delegated authorization: a token that says <em>"the holder may perform these actions on behalf of someone"</em>. It deliberately does not standardize how the client learns <em>who</em> that someone is. For many use cases — a calendar sync tool, a CI pipeline pushing to a deploy API — that's exactly right; the client doesn't need to know.</p>
+      <p class="lede" style="margin-top:10px">But many applications also need to identify the user: display "Welcome, Ada", look up your profile, record audit logs with the user's identity. For those cases, OAuth alone isn't enough — and that's exactly the gap OpenID Connect fills.</p>
+      <div class="card card--cyan" style="margin-top:18px">
+        <div class="minihead">next module</div>
+        <h3>How OIDC Works →</h3>
+        <p style="margin-top:6px">OpenID Connect is "OAuth with a standardized way to also know who the user is". Same flows, with one extra scope (<code>openid</code>) and one extra token (the id_token). The next module teaches it from scratch, using the same conceptual swimlane shape you just saw.</p>
+        <div style="margin-top:12px"><a class="linklike" href="#/oauth-vs-oidc">Open the OIDC tutorial →</a></div>
+      </div>
+    </section>
+
+    <section class="section lvl-adv">
+      <div class="kicker text-violet">advanced · deep dive</div>
+      <h2 style="margin-top:8px">OAuth 1.0a vs OAuth 2.0.</h2>
+      <p class="lede" style="margin-top:10px">If you encounter "OAuth 1.0" in older systems, it's a separate protocol — not just an older spec of OAuth 2.0. The 1.0a spec used HMAC request signing instead of TLS for protection; every request was individually signed with a shared secret using a canonicalized form of the URL and parameters. It was robust against early-2010s TLS weaknesses but very awkward to implement.</p>
+      <p class="lede" style="margin-top:10px">OAuth 2.0 (the current spec, what this lab covers) requires TLS for transport security and uses simpler bearer-token semantics. It's much easier to implement correctly, at the cost of <em>requiring</em> TLS — bearer tokens over plaintext HTTP are trivially stolen. OAuth 2.1 is an in-progress consolidation that removes deprecated grant types and codifies PKCE-everywhere.</p>
+    </section>
+  `);
+
+  // Mount the conceptual OAuth swimlane
+  renderFlow($('#oauth-conceptual-flow', view), 'oauth-conceptual');
+};
+
 ROUTES['oauth-vs-oidc'] = function (view) {
-  setHTML(view, moduleHeader('02', 'concepts · 01', 'How <em>OpenID Connect</em> works.', `
+  setHTML(view, moduleHeader('03', 'concepts · 02', 'How <em>OpenID Connect</em> works.', `
     OpenID Connect — OIDC, pronounced "oh-eye-dee-see" — is the standard for one application asking a trusted external service:
     <em>"can you tell me who this person is?"</em> It's how Google, Apple, Okta, and your company SSO let you click "Sign in with…"
     on dozens of apps without ever giving any of those apps your password.
@@ -403,7 +545,7 @@ ROUTES['oauth-vs-oidc'] = function (view) {
 };
 
 ROUTES['three-layers'] = function (view) {
-  setHTML(view, moduleHeader('04', 'concepts · 03', 'Three layers, three jobs.', `
+  setHTML(view, moduleHeader('05', 'concepts · 04', 'Three layers, three jobs.', `
     Most ZTNA confusion is about <em>which</em> layer is supposed to do <em>what</em>. Get this map right and the rest of the system makes sense.
     The illustration uses Okta + Cloudflare Access as a worked example, but the same three-layer structure applies to any IdP + gateway pair —
     Okta + AWS ALB, Okta + FortiGate, Entra ID + Google IAP, and so on.
@@ -618,7 +760,7 @@ ROUTES['three-layers'] = function (view) {
 
 ROUTES['tokens'] = function (view, params) {
   params = params || {};
-  setHTML(view, moduleHeader('03', 'concepts · 02', 'A token is just a string. Until you verify it.', `
+  setHTML(view, moduleHeader('04', 'concepts · 03', 'A token is just a string. Until you verify it.', `
     There are five tokens you'll meet. Each one is issued by a different party, lives a different life, and goes in a different place.
     Most of them are JSON Web Tokens (JWTs): three base64url-encoded segments — header, payload, signature — separated by dots.
   `) + `
@@ -795,7 +937,7 @@ ROUTES['tokens'] = function (view, params) {
 };
 
 ROUTES['scopes-aud-claims'] = function (view) {
-  setHTML(view, moduleHeader('05', 'concepts · 04', 'Scopes, audiences, and claims do <em>different jobs</em>.', `
+  setHTML(view, moduleHeader('06', 'concepts · 05', 'Scopes, audiences, and claims do <em>different jobs</em>.', `
     They show up next to each other in token payloads, so it's tempting to treat them interchangeably. Don't. Each one answers a different question.
   `) + `
     <section class="section">
